@@ -26,12 +26,12 @@ int analogPin = 0;  // Arduino analog pin to read
 // loadHigh, put test loads on hacked scale & enter analogue values for analogLow & analogHigh.
 // loadLow can be default 0 (no test load), just enter analogue reading for analogLow.
 // Low end of the test load values
-static long loadLow = 44; // measured low end load in grammes from good scales
-static int analogLow = 82; // [82] analog reading from load cell for low end test load
+static long loadLow = 0; // measured low end load in grammes from good scales
+static int analogLow = 74; // [82] analog reading from load cell for low end test load
 
 // High end of the test load values
-static long loadHigh = 5091; // [5091] measured high end load in grammes from good scales
-static int analogHigh = 1100; // [1022] analog reading from load cell for high end test load
+static long loadHigh = 500; // [5091] measured high end load in grammes from good scales
+static int analogHigh = 158; // [1022] analog reading from load cell for high end test load
 
 // This is used when you change the load cell platform to something else that weighs
 // different and the load is no longer on zero. Add an offset to set to zero.
@@ -61,8 +61,7 @@ void setup() {
   }
 }
 
-void loop() 
-{
+void loop() {
   int analogValue = analogRead(analogPin);  // Get analog read
   
   // Add new analog reading to buffer and return oldest reading
@@ -70,12 +69,11 @@ void loop()
   // Get running average, pass the latest and oldest analog sample reading
   analogSamplesAverage = runningAverage(analogValue, oldestSample);
   
-  if(millis() > time + plotDelay)
-  {
+  if(millis() > time + plotDelay){
     // Convert analog value to load in grams
     int loadGrams = map(analogSamplesAverage, analogLow, analogHigh, loadLow, loadHigh);
     loadGrams -= loadAdjustment;  // Shift the load to measure from 0 load
-    int xy = loadGrams+(loadGrams*20/100);
+    int xy = loadGrams-(loadGrams*0.5/100);
     if (calibrate) {// print test results
       //Serial.print("Analog pin value: ");Serial.println(analogValue);
       Serial.print("Smoothed analog value: ");
@@ -92,8 +90,7 @@ void loop()
 }
 
 // Function - running average
-long runningAverage(long newSample, long oldSample) 
-{
+long runningAverage(long newSample, long oldSample) {
   // Add new sample and subtract old sample from the samples buffer total
   // then return sample average
   sampleBufferTotal += newSample;  // Add new analog sample
@@ -103,17 +100,14 @@ long runningAverage(long newSample, long oldSample)
 
 // Function - add and remove analog samples from ring buffer, return oldest sample
 // The ring buffer is used to keep track of the oldest sample.
-int addSample(int newSample) 
-{
+int addSample(int newSample) {
   // Add new analog read sample to the ring buffer and return the oldest analog reading
   int oldSample;
-  if (lastSampleIndex == samplesBuffer - 1 ) 
-  { // Check if end off buffer reached
+  if (lastSampleIndex == samplesBuffer - 1 ) { // Check if end off buffer reached
     oldSample = analogSamples[0];  // Get old analog sample from start of buffer
     analogSamples[0] = newSample;  // Add new analog sample to start of buffer
     lastSampleIndex = 0;  // Record sample index currently working on
-  } else 
-  {
+  } else {
     lastSampleIndex ++;  // Move to next index
     oldSample = analogSamples[lastSampleIndex];  // Get old analog sample
     analogSamples[lastSampleIndex] = newSample;  // Add new analog sample
